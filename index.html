@@ -3,45 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Video Summarizer</title>
+    <title>AI Video Summarizer | theidealist</title>
     <style>
-        body { font-family: sans-serif; background: #121212; color: white; display: flex; flex-direction: column; align-items: center; padding: 50px; }
-        input { padding: 10px; width: 300px; border-radius: 5px; border: none; margin-bottom: 10px; }
-        button { padding: 10px 20px; background: #00ffcc; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        #result { margin-top: 30px; max-width: 600px; line-height: 1.6; background: #1e1e1e; padding: 20px; border-radius: 10px; display: none; }
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --text: #c9d1d9;
+            --accent: #238636;
+            --accent-hover: #2ea043;
+            --border: #30363d;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding-top: 50px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background: var(--card);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            color: white;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        p.subtitle {
+            color: #8b949e;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 6px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            border-color: #58a6ff;
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: #30363d;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            background: #0d1117;
+            border-left: 4px solid var(--accent);
+            border-radius: 4px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            display: none;
+            font-size: 1.05rem;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+            color: #58a6ff;
+        }
     </style>
 </head>
 <body>
-    <h1>Video Summarizer</h1>
-    <input type="text" id="videoLink" placeholder="Paste YouTube link here...">
-    <button onclick="getSummary()" id="btn">Get AI Summary</button>
+
+<div class="container">
+    <h1>Video Analysis Engine</h1>
+    <p class="subtitle">Extract 5-7 key bullet points using Gemini AI</p>
+
+    <div class="input-group">
+        <input type="text" id="videoUrl" placeholder="Paste YouTube link here..." required>
+        <button onclick="generateSummary()" id="submitBtn">Analyze</button>
+    </div>
+
+    <div id="loader" class="loader">AI is processing transcript... please wait.</div>
     <div id="result"></div>
+</div>
 
-    <script>
-        async function getSummary() {
-            const link = document.getElementById('videoLink').value;
-            const btn = document.getElementById('btn');
-            const resultDiv = document.getElementById('result');
+<script>
+    async function generateSummary() {
+        const videoUrl = document.getElementById('videoUrl').value;
+        const btn = document.getElementById('submitBtn');
+        const resultDiv = document.getElementById('result');
+        const loader = document.getElementById('loader');
 
-            btn.innerText = "Processing...";
-            btn.disabled = true;
+        if (!videoUrl) {
+            alert("Please paste a link first!");
+            return;
+        }
 
-            try {
-                const response = await fetch('YOUR_N8N_WEBHOOK_URL', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ "youtube_link": link }) // Match the field name in n8n
-                });
+        // UI Updates
+        btn.disabled = true;
+        loader.style.display = "block";
+        resultDiv.style.display = "none";
 
-                const data = await response.text(); // Use .text() if n8n returns HTML
-                resultDiv.style.display = "block";
-                resultDiv.innerHTML = data;
-            } catch (error) {
-                resultDiv.innerHTML = "Error connecting to AI.";
-            }
-            btn.innerText = "Get AI Summary";
+        try {
+            const response = await fetch('http://localhost:5678/webhook/video-summarizer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    video_url: videoUrl // This matches the field name we'll use in n8n
+                })
+            });
+
+            if (!response.ok) throw new Error('Network response was not ok');
+
+            const data = await response.text();
+            
+            loader.style.display = "none";
+            resultDiv.style.display = "block";
+            resultDiv.innerHTML = data;
+
+        } catch (error) {
+            loader.style.display = "none";
+            resultDiv.style.display = "block";
+            resultDiv.innerHTML = "<span style='color: #f85149;'>Error: Could not connect to n8n. Make sure your local server is running and CORS is enabled.</span>";
+            console.error('Error:', error);
+        } finally {
             btn.disabled = false;
         }
-    </script>
+    }
+</script>
+
 </body>
 </html>
