@@ -1,59 +1,144 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Summarizer | TheIdealist</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f0f0f; color: #e0e0e0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .container { background: #1a1a1a; padding: 2rem; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); width: 90%; max-width: 600px; border: 1px solid #333; }
-        h1 { color: #fff; font-weight: 600; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 6px; border: 1px solid #444; background: #262626; color: #fff; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border-radius: 6px; border: none; background: #007bff; color: white; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #0056b3; }
-        #output { margin-top: 20px; padding: 15px; background: #262626; border-radius: 8px; line-height: 1.6; min-height: 50px; border-left: 4px solid #007bff; white-space: pre-wrap; }
-        .loader { color: #888; font-style: italic; text-align: center; display: none; }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AI Notes Generator</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* Container */
+.container {
+  width: 90%;
+  max-width: 800px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
+/* Title */
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Input */
+.input-box {
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  outline: none;
+  font-size: 16px;
+}
+
+/* Button */
+button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6, #9333ea);
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+button:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* Output */
+#output {
+  margin-top: 20px;
+  padding: 20px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 12px;
+  height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+/* Loader */
+.loader {
+  border: 4px solid rgba(255,255,255,0.2);
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  animation: spin 1s linear infinite;
+  margin: auto;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+</style>
+
 </head>
+
 <body>
 
 <div class="container">
-    <h1>YouTube AI Summarizer</h1>
-    <input type="text" id="videoUrl" placeholder="Enter YouTube Video URL...">
-    <button onclick="sendData()">Generate Summary</button>
-    <div id="loader" class="loader">Extracting transcript and generating 10 bullet points... (this takes ~30s)</div>
-    <div id="output">Summary will appear here.</div>
+  <h1>📘 AI Notes Generator</h1>
+
+  <div class="input-box">
+    <input id="topic" placeholder="Enter topic (e.g. Heap, Graph, DP)" />
+    <button onclick="generate()">Generate</button>
+  </div>
+
+  <div id="output">✨ Your AI-generated notes will appear here...</div>
 </div>
 
 <script>
-    async function sendData() {
-        const url = document.getElementById('videoUrl').value;
-        const output = document.getElementById('output');
-        const loader = document.getElementById('loader');
+async function generate() {
+  const topic = document.getElementById("topic").value;
+  const output = document.getElementById("output");
 
-        if (!url) { alert("Please enter a URL"); return; }
+  if (!topic) {
+    output.innerText = "⚠️ Please enter a topic!";
+    return;
+  }
 
-        loader.style.display = "block";
-        output.innerText = "";
+  output.innerHTML = '<div class="loader"></div>';
 
-        try {
-            // REPLACE THE URL BELOW WITH YOUR n8n TEST WEBHOOK URL
-            const response = await fetch('http://localhost:5678/webhook-test/summarize-video', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ videoUrl: url })
-            });
+  try {
+    const res = await fetch("YOUR_WEBHOOK_URL_HERE", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ topic })
+    });
 
-            if (!response.ok) throw new Error("Server responded with an error");
+    const data = await res.json();
 
-            const data = await response.json();
-            loader.style.display = "none";
-            output.innerText = data.summary;
-        } catch (error) {
-            loader.style.display = "none";
-            output.innerText = "Error: " + error.message;
-        }
-    }
+    output.innerText = data.result || JSON.stringify(data, null, 2);
+
+  } catch (err) {
+    output.innerText = "❌ Error: " + err;
+  }
+}
 </script>
 
 </body>
