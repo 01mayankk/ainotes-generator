@@ -118,7 +118,7 @@
     <p class="subtitle">Extract 5-7 key bullet points using Gemini AI</p>
 
     <div class="input-group">
-        <input type="text" id="videoUrl" placeholder="Paste YouTube link here..." required>
+        <input type="text" id="videoUrls" placeholder="Paste YouTube link here..." required>
         <button onclick="generateSummary()" id="submitBtn">Analyze</button>
     </div>
 
@@ -139,7 +139,7 @@
         const params = new URLSearchParams();
         params.append('video_url', videoUrl);
 
-        const response = await fetch('http://localhost:5678/webhook/video-summarizer', {
+        const response = await fetch('http://localhost:5678/webhook/summarize-video', {
             method: 'POST',
             body: params // Sending as form-data instead of JSON
         });
